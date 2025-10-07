@@ -19,7 +19,7 @@ pub enum SaveError {
 struct UUID(Uuid);
 
 #[derive(Debug, PartialEq, Clone)]
-struct Task {
+pub struct Task {
     id: UUID,
     title: String,
     status: Status,
@@ -33,8 +33,16 @@ trait TaskRepository {
     fn get_by_id(&self, id: UUID) -> Result<Task, SaveError>;
 }
 
-struct InMemoryTaskRepository {
+pub struct InMemoryTaskRepository {
     store: HashMap<UUID, Task>,
+}
+
+impl InMemoryTaskRepository {
+    pub fn new() -> Self {
+        InMemoryTaskRepository {
+            store: HashMap::new(),
+        }
+    }
 }
 
 impl TaskRepository for InMemoryTaskRepository {
@@ -55,7 +63,7 @@ impl TaskRepository for InMemoryTaskRepository {
     }
 }
 
-fn create_task(input: String, repo: &mut impl TaskRepository) -> Result<(), SaveError> {
+pub fn create_task(input: String, repo: &mut impl TaskRepository) -> Result<(), SaveError> {
     let task = Task {
         id: UUID(Uuid::new_v4()),
         title: input,
@@ -66,12 +74,12 @@ fn create_task(input: String, repo: &mut impl TaskRepository) -> Result<(), Save
     Ok(())
 }
 
-fn get_all_tasks(repo: &impl TaskRepository) -> Result<Vec<Task>, SaveError> {
+pub fn get_all_tasks(repo: &impl TaskRepository) -> Result<Vec<Task>, SaveError> {
     let tasks = repo.get()?;
     Ok(tasks)
 }
 
-fn get_task_by(id: UUID, repo: &impl TaskRepository) -> Result<Task, SaveError> {
+pub fn get_task_by(id: UUID, repo: &impl TaskRepository) -> Result<Task, SaveError> {
     let task = repo.get_by_id(id)?;
     print!("Task: {:?}", task);
     Ok(task)
