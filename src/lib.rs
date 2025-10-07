@@ -1,5 +1,5 @@
-pub use mockall::*;
-use std::time::SystemTime;
+use mockall::*;
+use std::{collections::HashMap, time::SystemTime};
 use uuid::Uuid;
 
 #[derive(Debug, PartialEq)]
@@ -14,7 +14,7 @@ pub enum SaveError {
     DuplicateId,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Hash, Eq, Clone)]
 struct UUID(Uuid);
 
 #[derive(Debug, PartialEq)]
@@ -26,18 +26,32 @@ struct Task {
 }
 
 #[cfg_attr(test, automock)]
-pub trait TaskRepository {
-    fn save(&self, task: Task) -> Result<(), SaveError>;
+trait TaskRepository {
+    fn save(&mut self, task: Task) -> Result<(), SaveError>;
 }
 
-pub fn create_task(input: String, repo: &mut impl TaskRepository) -> Result<(), SaveError> {
+struct InMemoryTaskRepository {
+    store: HashMap<UUID, Task>,
+}
+
+impl TaskRepository for InMemoryTaskRepository {
+    fn save(&mut self, task: Task) -> Result<(), SaveError> {
+        if self.store.contains_key(&task.id) {
+            return Err(SaveError::DuplicateId);
+        }
+        self.store.insert(task.id.clone(), task);
+        Ok(())
+    }
+}
+
+fn create_task(input: String, repo: &mut impl TaskRepository) -> Result<(), SaveError> {
     let task = Task {
         id: UUID(Uuid::new_v4()),
         title: input,
-        status: Status::InProgress,
+        status: Status::Todo,
         created_at: SystemTime::now(),
     };
-    let _ = repo.save(task)?;
+    repo.save(task)?;
     Ok(())
 }
 
@@ -52,7 +66,7 @@ mod tests {
         let mut in_memory_task_repo_mock = MockTaskRepository::new();
         in_memory_task_repo_mock
             .expect_save()
-            .withf(|task: &Task| task.title == "Some two minute task".to_string())
+            .withf(|task: &Task| task.title == "Some two minute task")
             .times(1)
             .returning(|_| Ok(()));
 
