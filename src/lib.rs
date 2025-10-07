@@ -123,4 +123,34 @@ mod tests {
 
         assert_eq!(result, Ok(expected_tasks));
     }
+
+    #[test]
+    fn it_should_list_multiple_tasks() {
+        let input = "Another task".to_string();
+        let input_two = "A simple task".to_string();
+        let task = Task {
+            id: UUID(Uuid::new_v4()),
+            title: input,
+            status: Status::Todo,
+            created_at: SystemTime::now(),
+        };
+        let another_task = Task {
+            id: UUID(Uuid::new_v4()),
+            title: input_two,
+            status: Status::InProgress,
+            created_at: SystemTime::now(),
+        };
+        let tasks = vec![task.clone(), another_task.clone()];
+        let expected_tasks = tasks.clone();
+
+        let mut in_memory_task_repo_mock = MockTaskRepository::new();
+        in_memory_task_repo_mock
+            .expect_get()
+            .times(1)
+            .returning(move || Ok(tasks.clone()));
+
+        let result = get_all_tasks(&in_memory_task_repo_mock);
+
+        assert_eq!(result, Ok(expected_tasks));
+    }
 }
