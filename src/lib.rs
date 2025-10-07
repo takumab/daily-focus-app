@@ -1,4 +1,4 @@
-use mockall::*;
+use mockall::automock;
 use std::{collections::HashMap, time::SystemTime};
 use uuid::Uuid;
 
