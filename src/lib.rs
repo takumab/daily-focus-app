@@ -1,6 +1,6 @@
 use mockall::automock;
 use std::{collections::HashMap, time::SystemTime};
-use uuid::Uuid;
+use uuid::{Uuid, uuid};
 
 #[derive(Debug, PartialEq, Clone)]
 enum Status {
@@ -12,6 +12,7 @@ enum Status {
 #[derive(Debug, PartialEq)]
 pub enum SaveError {
     DuplicateId,
+    NotFound,
 }
 
 #[derive(Debug, PartialEq, Hash, Eq, Clone)]
@@ -29,6 +30,7 @@ struct Task {
 trait TaskRepository {
     fn save(&mut self, task: Task) -> Result<(), SaveError>;
     fn get(&self) -> Result<Vec<Task>, SaveError>;
+    fn get_by_id(&self, id: UUID) -> Result<Task, SaveError>;
 }
 
 struct InMemoryTaskRepository {
@@ -47,6 +49,10 @@ impl TaskRepository for InMemoryTaskRepository {
     fn get(&self) -> Result<Vec<Task>, SaveError> {
         Ok(self.store.values().cloned().collect())
     }
+
+    fn get_by_id(&self, id: UUID) -> Result<Task, SaveError> {
+        self.store.get(&id).cloned().ok_or(SaveError::NotFound)
+    }
 }
 
 fn create_task(input: String, repo: &mut impl TaskRepository) -> Result<(), SaveError> {
@@ -63,6 +69,12 @@ fn create_task(input: String, repo: &mut impl TaskRepository) -> Result<(), Save
 fn get_all_tasks(repo: &impl TaskRepository) -> Result<Vec<Task>, SaveError> {
     let tasks = repo.get()?;
     Ok(tasks)
+}
+
+fn get_task_by(id: UUID, repo: &impl TaskRepository) -> Result<Task, SaveError> {
+    let task = repo.get_by_id(id)?;
+    print!("Task: {:?}", task);
+    Ok(task)
 }
 
 #[cfg(test)]
@@ -152,5 +164,35 @@ mod tests {
         let result = get_all_tasks(&in_memory_task_repo_mock);
 
         assert_eq!(result, Ok(expected_tasks));
+    }
+
+    #[test]
+    fn it_should_get_a_specific_task() {
+        let input = "Another task".to_string();
+        let task = Task {
+            id: UUID(Uuid::new_v4()),
+            title: input,
+            status: Status::Todo,
+            created_at: SystemTime::now(),
+        };
+        let task_id = UUID(uuid!("123e4567-e89b-12d3-a456-426614174000"));
+        let expected_task = task.clone();
+
+        let mut in_memory_task_repo_mock = MockTaskRepository::new();
+        in_memory_task_repo_mock
+            .expect_get_by_id()
+            .withf({
+                let task_id = task_id.clone();
+                move |id: &UUID| *id == task_id
+            })
+            .times(1)
+            .returning({
+                let task = task.clone();
+                move |_id: UUID| Ok(task.clone())
+            });
+
+        let result = get_task_by(task_id, &in_memory_task_repo_mock);
+
+        assert_eq!(result, Ok(expected_task));
     }
 }
