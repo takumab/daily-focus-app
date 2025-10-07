@@ -74,4 +74,20 @@ mod tests {
 
         assert_eq!(result, Ok(()));
     }
+
+    #[test]
+    fn it_should_create_another_task() {
+        let input = "Another task".to_string();
+
+        let mut in_memory_task_repo_mock = MockTaskRepository::new();
+        in_memory_task_repo_mock
+            .expect_save()
+            .withf(|task: &Task| task.title == "Another task")
+            .times(1)
+            .returning(|_| Ok(()));
+
+        let result = create_task(input, &mut in_memory_task_repo_mock);
+
+        assert_eq!(result, Ok(()));
+    }
 }
