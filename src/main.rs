@@ -11,8 +11,8 @@ fn main() {
         .expect("Failed to read line");
 
     let mut in_memory_task_repo = InMemoryTaskRepository::new();
-    let user_input = input.trim().to_string();
-    create_task(user_input, &mut in_memory_task_repo).unwrap();
+    let input = input.trim().to_string();
+    create_task(input, &mut in_memory_task_repo).unwrap();
 
     let tasks = get_all_tasks(&in_memory_task_repo).unwrap();
     println!("All tasks: {:?}", tasks);
