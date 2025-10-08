@@ -81,7 +81,6 @@ pub fn get_all_tasks(repo: &impl TaskRepository) -> Result<Vec<Task>, SaveError>
 
 pub fn get_task_by(id: UUID, repo: &impl TaskRepository) -> Result<Task, SaveError> {
     let task = repo.get_by_id(id)?;
-    print!("Task: {:?}", task);
     Ok(task)
 }
 
