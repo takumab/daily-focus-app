@@ -87,37 +87,27 @@ pub fn get_task_by(id: UUID, repo: &impl TaskRepository) -> Result<Task, SaveErr
 #[cfg(test)]
 mod tests {
     use super::*;
+    use parameterized::parameterized;
 
-    #[test]
-    fn it_should_create_a_task() {
-        let input = "Some two minute task".to_string();
-
+    #[parameterized(input = {
+        "Some two minute task".to_string(),
+        "Another task".to_string()
+    }, expected = {
+        Ok(()),
+        Ok(())
+    })]
+    fn it_should_create_a_task(input: String, expected: Result<(), SaveError>) {
         let mut in_memory_task_repo_mock = MockTaskRepository::new();
+        let user_input = input.clone();
         in_memory_task_repo_mock
             .expect_save()
-            .withf(|task: &Task| task.title == "Some two minute task")
+            .withf(move |task: &Task| task.title == user_input)
             .times(1)
             .returning(|_| Ok(()));
 
         let result = create_task(input, &mut in_memory_task_repo_mock);
 
-        assert_eq!(result, Ok(()));
-    }
-
-    #[test]
-    fn it_should_create_another_task() {
-        let input = "Another task".to_string();
-
-        let mut in_memory_task_repo_mock = MockTaskRepository::new();
-        in_memory_task_repo_mock
-            .expect_save()
-            .withf(|task: &Task| task.title == "Another task")
-            .times(1)
-            .returning(|_| Ok(()));
-
-        let result = create_task(input, &mut in_memory_task_repo_mock);
-
-        assert_eq!(result, Ok(()));
+        assert_eq!(result, expected);
     }
 
     #[test]

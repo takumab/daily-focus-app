@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 mockall = "0.13"
+parameterized = "2.0.0"
 
 
 [dependencies.uuid]
