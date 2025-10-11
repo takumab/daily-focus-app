@@ -94,8 +94,6 @@ pub fn update_task(id: UUID, repo: &mut impl TaskRepository) -> Result<Task, Sav
 
 #[cfg(test)]
 mod tests {
-    use std::iter::Take;
-
     use super::*;
     use parameterized::parameterized;
 
