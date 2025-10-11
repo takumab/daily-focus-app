@@ -4,10 +4,10 @@ This app's goal is to enable me to create a Daily Focus Plan
 ## New Functionality
 - [X] Create a new task
   - [X] save the task
-- [ ] list tasks
+- [X] list tasks
 - [ ] Update a task
   - [ ] Mark a task as done
-  - [ ] Update title of taks
+  - [ ] Update title of task
 - [ ] Delete a task
 
 ## Light Sketch

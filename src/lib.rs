@@ -84,8 +84,18 @@ pub fn get_task_by(id: UUID, repo: &impl TaskRepository) -> Result<Task, SaveErr
     Ok(task)
 }
 
+pub fn update_task(id: UUID, repo: &mut impl TaskRepository) -> Result<Task, SaveError> {
+    let task = repo.get_by_id(id)?;
+    let mut task = task.clone();
+    task.title = "Another task to be updated change the title".to_string();
+    repo.save(task.clone())?;
+    Ok(task)
+}
+
 #[cfg(test)]
 mod tests {
+    use std::iter::Take;
+
     use super::*;
     use parameterized::parameterized;
 
@@ -191,5 +201,46 @@ mod tests {
         let result = get_task_by(task_id, &in_memory_task_repo_mock);
 
         assert_eq!(result, Ok(expected_task));
+    }
+
+    #[test]
+    fn it_should_update_task_title() {
+        let task_id = UUID(uuid!("123e4567-e89b-12d3-a456-426614174000"));
+        let original_task = Task {
+            id: task_id.clone(),
+            title: "Another task to be updated".to_string(),
+            status: Status::Todo,
+            created_at: SystemTime::now(),
+        };
+        let expected_task = Task {
+            id: task_id.clone(),
+            title: "Another task to be updated change the title".to_string(),
+            status: Status::Todo,
+            created_at: SystemTime::now(),
+        };
+
+        let mut in_memory_task_repo_mock = MockTaskRepository::new();
+        in_memory_task_repo_mock
+            .expect_get_by_id()
+            .withf({
+                let task_id = task_id.clone();
+                move |id: &UUID| *id == task_id
+            })
+            .times(1)
+            .returning({
+                let task = original_task.clone();
+                move |_id: UUID| Ok(task.clone())
+            });
+
+        in_memory_task_repo_mock
+            .expect_save()
+            .withf(move |task: &Task| task.title == "Another task to be updated change the title")
+            .times(1)
+            .returning(|_| Ok(()));
+
+        let result = update_task(task_id, &mut in_memory_task_repo_mock);
+        let result = result.unwrap();
+
+        assert_eq!(result.title, expected_task.title);
     }
 }
