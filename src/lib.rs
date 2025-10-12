@@ -86,8 +86,10 @@ pub fn get_task_by(id: UUID, repo: &impl TaskRepository) -> Result<Task, SaveErr
 
 pub fn update_task(id: UUID, repo: &mut impl TaskRepository) -> Result<Task, SaveError> {
     let task = repo.get_by_id(id)?;
-    let mut task = task.clone();
-    task.title = "Another task to be updated change the title".to_string();
+    let task = Task {
+        title: "Another task to be updated change the title".to_string(),
+        ..task
+    };
     repo.save(task.clone())?;
     Ok(task)
 }
