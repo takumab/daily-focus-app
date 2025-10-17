@@ -16,7 +16,7 @@ pub enum SaveError {
 }
 
 #[derive(Debug, PartialEq, Hash, Eq, Clone)]
-struct UUID(Uuid);
+pub struct UUID(Uuid);
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Task {
@@ -27,7 +27,7 @@ pub struct Task {
 }
 
 #[cfg_attr(test, automock)]
-trait TaskRepository {
+pub trait TaskRepository {
     fn save(&mut self, task: Task) -> Result<(), SaveError>;
     fn get(&self) -> Result<Vec<Task>, SaveError>;
     fn get_by_id(&self, id: UUID) -> Result<Task, SaveError>;
@@ -206,18 +206,25 @@ mod tests {
         assert_eq!(result, Ok(expected_task));
     }
 
-    #[test]
-    fn it_should_update_task_title() {
+    #[parameterized(original_title = {
+        "Another task to be updated".to_string(),
+        "Another task to be updated again".to_string(),
+    }, expected_title = {
+        "Another task to be updated change the title".to_string(),
+        "Build a CLI app today".to_string()
+    })]
+    fn it_should_update_a_task_title(original_title: String, expected_title: String) {
         let task_id = UUID(uuid!("123e4567-e89b-12d3-a456-426614174000"));
+        let expected = expected_title.clone();
         let original_task = Task {
             id: task_id.clone(),
-            title: "Another task to be updated".to_string(),
+            title: original_title,
             status: Status::Todo,
             created_at: SystemTime::now(),
         };
         let expected_task = Task {
             id: task_id.clone(),
-            title: "Another task to be updated change the title".to_string(),
+            title: expected.clone(),
             status: Status::Todo,
             created_at: SystemTime::now(),
         };
@@ -235,55 +242,14 @@ mod tests {
                 move |_id: UUID| Ok(task.clone())
             });
 
+        let title_ref = expected;
         in_memory_task_repo_mock
             .expect_save()
-            .withf(move |task: &Task| task.title == "Another task to be updated change the title")
-            .times(1)
-            .returning(|_| Ok(()));
-        let title = "Another task to be updated change the title".to_string();
-        let result = update_task(task_id, &mut in_memory_task_repo_mock, Some(title));
-        let result = result.unwrap();
-
-        assert_eq!(result.title, expected_task.title);
-    }
-
-    #[test]
-    fn it_should_update_task_with_a_different_title() {
-        let task_id = UUID(uuid!("123e4567-e89b-12d3-a456-426614174000"));
-        let original_task = Task {
-            id: task_id.clone(),
-            title: "Another task to be updated".to_string(),
-            status: Status::Todo,
-            created_at: SystemTime::now(),
-        };
-        let expected_task = Task {
-            id: task_id.clone(),
-            title: "Build a CLI app today".to_string(),
-            status: Status::Todo,
-            created_at: SystemTime::now(),
-        };
-
-        let mut in_memory_task_repo_mock = MockTaskRepository::new();
-        in_memory_task_repo_mock
-            .expect_get_by_id()
-            .withf({
-                let task_id = task_id.clone();
-                move |id: &UUID| *id == task_id
-            })
-            .times(1)
-            .returning({
-                let task = original_task.clone();
-                move |_id: UUID| Ok(task.clone())
-            });
-
-        in_memory_task_repo_mock
-            .expect_save()
-            .withf(move |task: &Task| task.title == "Build a CLI app today")
+            .withf(move |task: &Task| task.title == title_ref)
             .times(1)
             .returning(|_| Ok(()));
 
-        let title = "Build a CLI app today".to_string();
-        let result = update_task(task_id, &mut in_memory_task_repo_mock, Some(title));
+        let result = update_task(task_id, &mut in_memory_task_repo_mock, Some(expected_title));
         let result = result.unwrap();
 
         assert_eq!(result.title, expected_task.title);
