@@ -88,11 +88,11 @@ pub fn update_task(
     id: UUID,
     repo: &mut impl TaskRepository,
     title: Option<String>,
-    _status: Option<Status>,
+    status: Option<Status>,
 ) -> Result<Task, SaveError> {
     let mut task = repo.get_by_id(id)?;
     task.title = title.unwrap_or(task.title);
-    task.status = Status::InProgress;
+    task.status = status.unwrap_or(task.status);
     repo.save(task.clone())?;
     Ok(task)
 }
@@ -261,7 +261,7 @@ mod tests {
     }
 
     #[test]
-    fn update_task_status_to_in_progress() {
+    fn it_should_update_task_status_to_in_progress() {
         let task_id = UUID(uuid!("123e4567-e89b-12d3-a456-426614174000"));
         let original_task = Task {
             id: task_id.clone(),
@@ -301,6 +301,53 @@ mod tests {
             &mut in_memory_task_repo_mock,
             Some(title),
             Some(Status::InProgress),
+        );
+        let result = result.unwrap();
+
+        assert_eq!(result.status, expected_task.status)
+    }
+
+    #[test]
+    fn it_should_update_task_status_to_done() {
+        let task_id = UUID(uuid!("123e4567-e89b-12d3-a456-426614174000"));
+        let original_task = Task {
+            id: task_id.clone(),
+            title: "Another task to be updated".to_string(),
+            status: Status::InProgress,
+            created_at: SystemTime::now(),
+        };
+        let expected_task = Task {
+            id: task_id.clone(),
+            title: "Another task to be updated".to_string(),
+            status: Status::Done,
+            created_at: SystemTime::now(),
+        };
+
+        let mut in_memory_task_repo_mock = MockTaskRepository::new();
+        in_memory_task_repo_mock
+            .expect_get_by_id()
+            .withf({
+                let task_id = task_id.clone();
+                move |id: &UUID| *id == task_id
+            })
+            .times(1)
+            .returning({
+                let task = original_task.clone();
+                move |_id: UUID| Ok(task.clone())
+            });
+
+        in_memory_task_repo_mock
+            .expect_save()
+            .withf(move |task: &Task| task.status == Status::Done)
+            .times(1)
+            .returning(|_| Ok(()));
+
+        let title = "Another task to be updated".to_string();
+        let result = update_task(
+            task_id,
+            &mut in_memory_task_repo_mock,
+            Some(title),
+            Some(Status::Done),
         );
         let result = result.unwrap();
 
