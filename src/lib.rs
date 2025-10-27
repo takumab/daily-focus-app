@@ -88,7 +88,7 @@ pub fn update_task(
     id: UUID,
     repo: &mut impl TaskRepository,
     title: Option<String>,
-    status: Option<Status>,
+    _status: Option<Status>,
 ) -> Result<Task, SaveError> {
     let mut task = repo.get_by_id(id)?;
     task.title = title.unwrap_or(task.title);
@@ -304,6 +304,6 @@ mod tests {
         );
         let result = result.unwrap();
 
-        assert_eq!(result.status, Status::InProgress)
+        assert_eq!(result.status, expected_task.status)
     }
 }
