@@ -1,6 +1,6 @@
 use mockall::automock;
 use std::{collections::HashMap, time::SystemTime};
-use uuid::{Uuid, uuid};
+use uuid::{uuid, Uuid};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Status {
@@ -16,7 +16,7 @@ pub enum SaveError {
 }
 
 #[derive(Debug, PartialEq, Hash, Eq, Clone)]
-pub struct UUID(Uuid);
+pub struct UUID(pub Uuid);
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Task {
